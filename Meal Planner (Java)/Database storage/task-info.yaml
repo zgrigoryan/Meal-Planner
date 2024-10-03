@@ -1,0 +1,20 @@
+type: edu
+files:
+  - name: src/mealplanner/Main.java
+    visible: true
+    learner_created: false
+  - name: build.gradle
+    visible: true
+    learner_created: false
+  - name: test/MealPlannerTests.java
+    visible: false
+    learner_created: false
+  - name: src/mealplanner/A.java
+    visible: true
+    learner_created: true
+feedback_link: https://hyperskill.org/learn/step/25573#comment
+status: Solved
+feedback:
+  message: Congratulations!
+  time: "Thu, 03 Oct 2024 11:27:24 UTC"
+record: -1

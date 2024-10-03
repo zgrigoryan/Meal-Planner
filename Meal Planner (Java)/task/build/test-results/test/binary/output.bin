@@ -1,0 +1,128 @@
+[1;31m
+Start test 1[0m
+-What would you like to do (add, show, exit)?
+> exit
+Bye!
+[1;31m
+Start test 2[0m
+-What would you like to do (add, show, exit)?
+> add
+:Which meal do you want to add (breakfast, lunch, dinner)?
+> lunch
+Input the meal's name:
+> sushi
+Input the ingredients:
+> salmon, rice, avocado
+The meal has been added!
+-What would you like to do (add, show, exit)?
+> show
+Category: lunch
+Name: sushi
+Ingredients:
+salmon
+rice
+avocado
+
+-What would you like to do (add, show, exit)?
+> exit
+Bye!
+[1;31m
+Start test 3[0m
+-What would you like to do (add, show, exit)?
+> show
+Category: lunch
+Name: sushi
+Ingredients:
+salmon
+rice
+avocado
+
+-What would you like to do (add, show, exit)?
+> exit
+Bye!
+[1;31m
+Start test 4[0m
+-What would you like to do (add, show, exit)?
+> add
+:Which meal do you want to add (breakfast, lunch, dinner)?
+> lunch
+Input the meal's name:
+> sushi
+Input the ingredients:
+> salmon, rice, avocado
+The meal has been added!
+-What would you like to do (add, show, exit)?
+> add
+:Which meal do you want to add (breakfast, lunch, dinner)?
+> breakfast
+Input the meal's name:
+
+> english
+Input the ingredients:
+> sausages, eggs
+The meal has been added!
+-What would you like to do (add, show, exit)?
+> add
+:Which meal do you want to add (breakfast, lunch, dinner)?
+	> dinner
+Input the meal's name:
+> meatballs
+Input the ingredients:
+!> meat, bread, salt, pepper, egg
+The meal has been added!
+-What would you like to do (add, show, exit)?
+> show
+Category: lunch
+Name: sushi
+Ingredients:
+salmon
+rice
+avocado
+
+Category: breakfast
+Name: english
+Ingredients:
+	sausages
+eggs
+
+Category: dinner
+Name: meatballs
+Ingredients:
+meat
+bread
+salt
+pepper
+egg
+
+-What would you like to do (add, show, exit)?
+> exit
+Bye!
+[1;31m
+Start test 5[0m
+-What would you like to do (add, show, exit)?
+> show
+Category: lunch
+Name: sushi
+Ingredients:
+salmon
+rice
+avocado
+
+Category: breakfast
+Name: english
+Ingredients:
+	sausages
+eggs
+
+Category: dinner
+Name: meatballs
+Ingredients:
+meat
+bread
+salt
+pepper
+egg
+
+-What would you like to do (add, show, exit)?
+> exit
+Bye!
