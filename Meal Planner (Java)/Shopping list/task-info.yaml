@@ -9,6 +9,13 @@ files:
   - name: test/MealPlannerTests.java
     visible: false
     learner_created: false
+  - name: plan.txt
+    visible: true
+    learner_created: true
 feedback_link: https://hyperskill.org/learn/step/25576#comment
-status: Unchecked
-record: -1
+status: Solved
+feedback:
+  message: Well done! You've finished the project. Select a new project on <a href="https://hyperskill.org/projects">Hyperskill</a>
+    to continue learning.
+  time: "Tue, 08 Oct 2024 09:46:17 UTC"
+record: 6

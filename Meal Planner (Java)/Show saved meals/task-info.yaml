@@ -9,6 +9,12 @@ files:
   - name: test/MealPlannerTests.java
     visible: false
     learner_created: false
+  - name: src/mealplanner/A.java
+    visible: true
+    learner_created: true
 feedback_link: https://hyperskill.org/learn/step/25574#comment
-status: Unchecked
-record: -1
+status: Solved
+feedback:
+  message: Congratulations!
+  time: "Mon, 07 Oct 2024 12:51:29 UTC"
+record: 4
