@@ -4,6 +4,7 @@ import org.hyperskill.hstest.stage.StageTest;
 import org.hyperskill.hstest.testcase.CheckResult;
 import org.hyperskill.hstest.testing.TestedProgram;
 
+import java.io.File;
 import java.sql.*;
 import java.util.*;
 
@@ -57,8 +58,8 @@ public class MealPlannerTests extends StageTest {
   static final String DB_URL = "jdbc:postgresql:meals_db";
   static final String USER = "postgres";
   static final String PASS = "1111";
-  static final String primary_input = "What would you like to do (add, show, plan, list plan, exit)?";
-  static final String primary_feedback = "Your program should ask the user about the required action: \"(add, show, plan, list plan, exit)" +
+  static final String primary_input = "What would you like to do (add, show, plan, list plan, save, exit)?";
+  static final String primary_feedback = "Your program should ask the user about the required action: \"(add, show, plan, list plan, save, exit)" +
           "?\"";
 
   String[] days = new String[]{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
@@ -133,8 +134,8 @@ public class MealPlannerTests extends StageTest {
     }
   }
 
-  @DynamicTest(order = 1)
-  public CheckResult normalExe12Test() {
+  @DynamicTest(order = 0)
+  public CheckResult normalExe21Test() {
 
     checkConnection();
     Connection connection = null;
@@ -153,10 +154,58 @@ public class MealPlannerTests extends StageTest {
     }
 
     CheckOutput co = new CheckOutput();
-
-    if (!co.start(primary_input)) {
+    if (!co.start(primary_input))
       return CheckResult.wrong(primary_feedback);
+    ArrayList<dbTable> tables = new ArrayList<>(Arrays.asList(
+            new dbTable("ingredients", new ArrayList<>(
+                    Arrays.asList(
+                            new Column("ingredient", "varchar"),
+                            new Column("ingredient_id", "int4"),
+                            new Column("meal_id", "int4")
+                    )
+            )),
+            new dbTable("meals", new ArrayList<>(
+                    Arrays.asList(
+                            new Column("category", "varchar"),
+                            new Column("meal", "varchar"),
+                            new Column("meal_id", "int4")
+                    )
+            ))
+    ));
+    checkTableSchema(tables);
+
+    if (!co.input("save", "Unable to save. Plan your meals first."))
+      return CheckResult.wrong("Your output should contain \"Unable to save. Plan your meals first.\"");
+
+    if (!co.input("exit", "Bye!"))
+      return CheckResult.wrong("Your output should contain \"Bye!\"");
+    if (!co.programIsFinished())
+      return CheckResult.wrong("The application didn't exit.");
+    return CheckResult.correct();
+  }
+
+  @DynamicTest(order = 1)
+  public CheckResult normalExe16Test() {
+
+    checkConnection();
+    Connection connection = null;
+    try {
+      connection = DriverManager.getConnection(DB_URL, USER, PASS);
+    } catch (Exception e) {
+      return CheckResult.wrong("An exception was thrown, while trying to connect to database. Connection Failed");
     }
+    try {
+      Statement statement = connection.createStatement();
+      statement.executeUpdate("DROP TABLE if exists plan");
+      statement.executeUpdate("DROP TABLE if exists ingredients");
+      statement.executeUpdate("DROP TABLE if exists meals");
+    } catch (Exception e) {
+      return CheckResult.wrong("An exception was thrown, while trying to drop tables - " + e);
+    }
+
+    CheckOutput co = new CheckOutput();
+    if (!co.start(primary_input))
+      return CheckResult.wrong(primary_feedback);
     ArrayList<dbTable> tables = new ArrayList<>(Arrays.asList(
             new dbTable("ingredients", new ArrayList<>(
                     Arrays.asList(
@@ -183,7 +232,7 @@ public class MealPlannerTests extends StageTest {
   }
 
   @DynamicTest(order = 2)
-  CheckResult normalExe13Test() {
+  CheckResult normalExe17Test() {
     checkConnection();
     Connection connection = null;
     try {
@@ -288,7 +337,7 @@ public class MealPlannerTests extends StageTest {
   }
 
   @DynamicTest(order = 3)
-  CheckResult normalExe14Test() {
+  CheckResult normalExe18Test() {
     checkConnection();
     Connection connection = null;
     try {
@@ -347,7 +396,7 @@ public class MealPlannerTests extends StageTest {
   }
 
   @DynamicTest(order = 4)
-  CheckResult normalExe15Test() {
+  CheckResult normalExe19Test() {
     checkConnection();
     Connection connection = null;
     try {
@@ -449,7 +498,7 @@ public class MealPlannerTests extends StageTest {
   }
 
   @DynamicTest(order = 5)
-  CheckResult normalExe16Test() {
+  CheckResult normalExe20Test() {
     checkConnection();
     Connection connection = null;
     try {
@@ -457,47 +506,52 @@ public class MealPlannerTests extends StageTest {
     } catch (Exception e) {
       return CheckResult.wrong("An exception was thrown, while trying to connect to database. Connection Failed");
     }
-    try {
-      Statement statement = connection.createStatement();
-    } catch (Exception e) {
-      return CheckResult.wrong("An exception was thrown, while trying to connect with the database - " + e);
-    }
 
     try {
       CheckOutput co = new CheckOutput();
       if (!co.start(primary_input))
         return CheckResult.wrong(primary_feedback);
 
-      co.getNextOutput("list plan");
+      if (!co.input("save", "Input a filename:"))
+        return CheckResult.wrong("Your output should contain: \"Input a filename:\"");
 
-      String[] planPrintout = new String[]{"Monday", "Breakfast: scrambled eggs", "Lunch: sushi", "Dinner: pumpkin " +
-              "soup",
-              "Tuesday", "Breakfast: sandwich", "Lunch: chicken salad", "Dinner: beef steak",
-              "Wednesday", "Breakfast: oatmeal", "Lunch: omelette", "Dinner: pizza",
-              "Thursday", "Breakfast: english breakfast", "Lunch: salad", "Dinner: tomato soup",
-              "Friday", "Breakfast: scrambled eggs", "Lunch: sushi", "Dinner: pumpkin soup",
-              "Saturday", "Breakfast: sandwich", "Lunch: chicken salad", "Dinner: beef steak",
-              "Sunday", "Breakfast: oatmeal", "Lunch: omelette", "Dinner: pizza"};
+      if (!co.input("plan.txt", "Saved!"))
+        return CheckResult.wrong("Your output should contain: \"Saved!\"");
 
-      for (String line : planPrintout) {
-        if (!co.inputNext(line))
-          return CheckResult.wrong("Your output should contain \"" + line + "\".");
+      if (!co.inputNext(primary_input))
+        return CheckResult.wrong(primary_feedback);
+
+      File ingredientsFile = new File("plan.txt");
+      if (!ingredientsFile.exists())
+        return CheckResult.wrong("The ingredient file doesn't exist.");
+
+      List<String> ingredientsInPlan = new ArrayList<>(List.of(
+              "avocado x2", "bacon", "banana x2", "beef steak x2", "bread x3", "carrots x2",
+              "cheese x9", "chicken x2", "coconut milk x2", "curry x2", "eggs x5",
+              "flour x2", "ham x2", "lettuce x3", "milk x6", "oats x2", "olives x3",
+              "onion", "orzo", "peanut butter x2", "pumpkin x2", "rice x2", "salami x2",
+              "salmon x2", "sausages", "tomato x6", "tomatoes"));
+      Scanner scanner = new Scanner(ingredientsFile);
+      while(scanner.hasNext()){
+        String line = scanner.nextLine();
+        if (!ingredientsInPlan.contains(line))
+          return CheckResult.wrong("There is no ingredient \""+line+"\" in plan");
+        ingredientsInPlan.remove(line);
       }
+      if(!ingredientsInPlan.isEmpty())
+        return CheckResult.wrong("Ingredient \""+ingredientsInPlan.get(0)+"\" doesn't exist in file.");
 
       if (!co.input("exit", "Bye!"))
         return CheckResult.wrong("Your output should contain \"Bye!\"");
 
       if (!co.programIsFinished())
         return CheckResult.wrong("The application didn't exit.");
-
     } catch (Exception e) {
-      return CheckResult.wrong("An exception was thrown while testing - " + e);
+      return CheckResult.wrong("An exception was thrown while testing - "+e);
     }
 
     return CheckResult.correct();
   }
-
-
 }
 
 

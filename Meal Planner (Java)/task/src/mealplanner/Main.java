@@ -2,6 +2,7 @@ package mealplanner;
 
 import java.sql.*;
 import java.util.*;
+import java.io.*;
 
 public class Main {
 
@@ -32,7 +33,7 @@ public class Main {
 
       String command;
       do {
-        System.out.println("What would you like to do (add, show, plan, list plan, exit)?");
+        System.out.println("What would you like to do (add, show, plan, list plan, save, exit)?");
         command = scanner.nextLine();
 
         switch (command) {
@@ -45,6 +46,9 @@ public class Main {
           case "list plan":
             listPlan();
             break;
+          case "save":
+            save();
+            break;
           case "plan":
             planMeals();
             break;
@@ -52,7 +56,7 @@ public class Main {
             System.out.println("Bye!");
             break;
           default:
-            System.out.println("What would you like to do (add, show, plan, list plan, exit)?");
+            System.out.println("What would you like to do (add, show, plan, list plan, save, exit)?");
         }
       } while (!command.equals("exit"));
 
@@ -67,7 +71,8 @@ public class Main {
     }
   }
 
-  // initialize meals, ingredients and plan tables.
+  // initialize a database with three tables: meals, ingredients, plan
+
   private static void initializeDatabase() throws SQLException {
     Statement statement = connection.createStatement();
     statement.executeUpdate("CREATE TABLE IF NOT EXISTS meals (" +
@@ -90,10 +95,11 @@ public class Main {
     statement.close();
   }
 
-  //local list for showing the emals
+  //local list for the meals
   private static List<Meal> meals = new ArrayList<>();
 
-  // private method to implement the functionality of adding a meal.
+
+  // method to implement the functionality of adding a meal to database
   private static void addMeal() {
     String name;
     String category;
@@ -113,7 +119,7 @@ public class Main {
     // get meal name
     while (true) {
       System.out.println("Input the meal's name:");
-      name = scanner.nextLine().trim();
+      name = scanner.nextLine();
       if (isValidName(name)) {
         break;
       } else {
@@ -182,6 +188,8 @@ public class Main {
     }
   }
 
+  // method to implement the functionality of showing the meals in the database
+
   private static void showMeals() {
     while (true) {
 
@@ -229,7 +237,7 @@ public class Main {
 
         if (mealList.isEmpty()) {
           System.out.println("No meals found.");
-          return;
+          return; // return to initial menu
         }
         System.out.println("Category: " + inputCategory);
 
@@ -259,7 +267,79 @@ public class Main {
 
   }
 
+  // method creates a file and writes the list of ingredients (creates a shopping list)
+  // retrieved from the table plan
+  private static void save() {
+    try {
+      String query = "SELECT meal_id FROM plan";
+      PreparedStatement stmt = connection.prepareStatement(query);
+      ResultSet rs = stmt.executeQuery();
+
+      // check if a meal plan exists
+      if (!rs.isBeforeFirst()) {
+        System.out.println("Unable to save. Plan your meals first.");
+        rs.close();
+        stmt.close();
+        return;
+      }
+
+      // map to store ingredient counts
+      Map<String, Integer> ingredientCounts = new HashMap<>();
+
+      // collect ingredients from all meals in the plan
+      while (rs.next()) {
+        int mealId = rs.getInt("meal_id");
+
+        //ingredients for each meal
+        String ingredientQuery = "SELECT ingredient FROM ingredients WHERE meal_id = ?";
+        PreparedStatement ingredientStmt = connection.prepareStatement(ingredientQuery);
+        ingredientStmt.setInt(1, mealId);
+        ResultSet ingredientRs = ingredientStmt.executeQuery();
+
+        while (ingredientRs.next()) {
+          String ingredient = ingredientRs.getString("ingredient");
+
+          // increment the count for each ingredient
+          ingredientCounts.put(ingredient, ingredientCounts.getOrDefault(ingredient, 0) + 1);
+        }
+
+        ingredientRs.close();
+        ingredientStmt.close();
+      }
+
+      rs.close();
+      stmt.close();
+
+      if (ingredientCounts.isEmpty()) {
+        return;
+      }
+
+      System.out.println("Input a filename:");
+      String filename = scanner.nextLine();
+
+      // write the shopping list to the file
+      try (FileWriter writer = new FileWriter(filename)) {
+        for (Map.Entry<String, Integer> entry : ingredientCounts.entrySet()) {
+          String ingredient = entry.getKey();
+          int count = entry.getValue();
+          if (count > 1) {
+            writer.write(ingredient + " x" + count + "\n"); //indicate the count of the ingredient
+          } else {
+            writer.write(ingredient + "\n");
+          }
+        }
+        System.out.println("Saved!");
+      } catch (IOException e) {
+        System.out.printf("An exception occurred: %s\n", e.getMessage());
+      }
+
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+  //method creates a meal plan for each day of the week
   private static void planMeals() {
+
     mealsByCategory.clear();
     String[] categories = {"breakfast", "lunch", "dinner"};
 
@@ -303,20 +383,17 @@ public class Main {
     }
 
     for (String day : DAYS_OF_WEEK) {
-
+      // plan breakfast, lunch, dinner
       System.out.println(day);
-      // Plan breakfast
-      planMealForCategory(day, "breakfast", breakfastPlan);
-      // Plan lunch
+      planMealForCategory(day, "breakfast", breakfastPlan); //helper method
       planMealForCategory(day, "lunch", lunchPlan);
-      // Plan dinner
       planMealForCategory(day, "dinner", dinnerPlan);
 
       System.out.println("Yeah! We planned the meals for " + day + ".");
     }
 
 
-    savePlanToDatabase();
+    savePlanToDatabase(); //helper method
 
     for (String day : DAYS_OF_WEEK) {
       System.out.println(day);
@@ -326,14 +403,11 @@ public class Main {
       System.out.println();
     }
   }
-
+  // helper method
   private static void planMealForCategory(String day, String category, Map<String, String> mealPlan) {
     List<String> meals = mealsByCategory.get(category);
 
-    List<String> sortedMeals = new ArrayList<>(meals);
-    Collections.sort(sortedMeals, String.CASE_INSENSITIVE_ORDER);
-
-    for (String meal : sortedMeals) {
+    for (String meal : meals) {
       System.out.println(meal);
     }
 
@@ -352,7 +426,7 @@ public class Main {
       }
     }
   }
-
+  // helper method
   private static void savePlanToDatabase() {
     try {
       String insertPlanQuery = "INSERT INTO plan (day, meal_category, meal_id, meal_option) VALUES (?, ?, ?, ?)";
@@ -394,6 +468,7 @@ public class Main {
     }
   }
 
+
   private static int getMealId(String mealName) throws SQLException {
     String query = "SELECT meal_id FROM meals WHERE meal = ?";
     PreparedStatement stmt = connection.prepareStatement(query);
@@ -408,7 +483,7 @@ public class Main {
     return mealId;
   }
 
-
+  // prints the created plan for the week
   private static void listPlan() {
     try {
       String query = "SELECT * FROM plan";
@@ -423,22 +498,20 @@ public class Main {
       }
 
       Map<String, Map<String, String>> weeklyPlan = new HashMap<>();
-
+      Map<String, String> mealOption = new HashMap<>();
       while (rs.next()) {
         String day = rs.getString("day");
         String category = rs.getString("meal_category");
-        String mealOption = rs.getString("meal_option");
-
+        String mealOptionStr = rs.getString("meal_option");
+        mealOption.put(category, mealOptionStr);
         weeklyPlan
-                .computeIfAbsent(day, k -> new HashMap<>())
-                .put(category, mealOption);
+                .put(day, mealOption);
       }
 
       rs.close();
       stmt.close();
 
 
-      // Iterate over the days in the correct order
       for (String day : DAYS_OF_WEEK) {
         Map<String, String> dayPlan = weeklyPlan.get(day);
         if (dayPlan != null) {
@@ -446,7 +519,7 @@ public class Main {
           System.out.println("Breakfast: " + dayPlan.get("breakfast"));
           System.out.println("Lunch: " + dayPlan.get("lunch"));
           System.out.println("Dinner: " + dayPlan.get("dinner"));
-          System.out.println(); // Empty line between days
+          System.out.println();
         }
       }
 
@@ -454,8 +527,6 @@ public class Main {
       e.printStackTrace();
     }
   }
-
-
 
   // generate meal and ingredient id by adding 1 to the previous maxID
   private static int getNextMealId() throws SQLException {
@@ -480,20 +551,18 @@ public class Main {
     return maxId + 1;
   }
 
-  // check the format of user input
+  // methods to check the format of user input
   private static boolean isValidName(String name) {
     return name.matches("[a-zA-Z ]+");
   }
-
   private static boolean isValidCategory(String category) {
     return category.equalsIgnoreCase("breakfast") || category.equalsIgnoreCase("lunch") || category.equalsIgnoreCase("dinner");
   }
-
   private static boolean isValidIngredient(String ingredient) {
     return ingredient.matches("[a-zA-Z ]+");
   }
 
-  // Meal class
+  // inner Meal class
   static class Meal {
     private final String category;
     private final String name;
